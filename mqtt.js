@@ -26,7 +26,7 @@ async function runSample(projectId = "test1-basn") {
   process.env.GOOGLE_APPLICATION_CREDENTIALS = "./test1-basn-c8b36638469a.json";
   // Create a new session
   const sessionClient = new dialogflow.SessionsClient({
-    keyFilename: '.\test1-basn-c8b36638469a.json'
+    keyFilename: 'test1-basn-c8b36638469a.json'
   });
   const sessionPath = sessionClient.projectAgentSessionPath(
     projectId,
@@ -48,15 +48,28 @@ async function runSample(projectId = "test1-basn") {
 
   // Send request and log result
   const responses = await sessionClient.detectIntent(request);
-  console.log("Detected intent");
-  const result = responses[0].queryResult;
-  console.log(`  Query: ${result.queryText}`);
-  console.log(`  Response: ${result.fulfillmentText}`);
-  if (result.intent) {
-    console.log(`  Intent: ${result.intent.displayName}`);
-  } else {
-    console.log("  No intent matched.");
-  }
+
+  client.on('connect', function () {
+    console.log('已連接至MQTT伺服器');
+    client.subscribe("dialogflow");
+    //client.publish("web_info");
+    
+  });
+  client.on('message', function (_, msg) { 
+    console.log("Detected intent");
+    const result = responses[0].queryResult;
+    console.log(`  Query: ${result.queryText}`);
+    console.log(`  Response: ${result.fulfillmentText}`);
+    if (result.intent) {
+      console.log(`  Intent: ${result.intent.displayName}`);
+    } else {
+      console.log("  No intent matched.");
+    }
+    // console.log( getDatetime() +"mqtt"+ " >> "+ msg.toString());
+    // store msg to redis database
+    
+  });
+ 
 }
 runSample();
 
@@ -104,6 +117,7 @@ client.on('connect', function () {
   //client.publish("web_info");
   
 });
+
 
 client.on('message', function (_, msg) { 
   console.log( getDatetime() +"mqtt"+ " >> "+ msg.toString());

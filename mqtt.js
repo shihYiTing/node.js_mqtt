@@ -15,7 +15,6 @@ var useremail
 var str
 
 
-
 /**
  * Send a query to the dialogflow agent, and return the query result.
  * @param {string} projectId The project to be used
@@ -47,31 +46,32 @@ async function runSample(projectId = "test1-basn") {
   };
 
   // Send request and log result
-  const responses = await sessionClient.detectIntent(request);
-
-  client.on('connect', function () {
-    console.log('已連接至MQTT伺服器');
-    client.subscribe("dialogflow");
-    //client.publish("web_info");
-    
-  });
-  client.on('message', function (_, msg) { 
-    console.log("Detected intent");
-    const result = responses[0].queryResult;
-    console.log(`  Query: ${result.queryText}`);
-    console.log(`  Response: ${result.fulfillmentText}`);
-    if (result.intent) {
-      console.log(`  Intent: ${result.intent.displayName}`);
-    } else {
-      console.log("  No intent matched.");
-    }
-    // console.log( getDatetime() +"mqtt"+ " >> "+ msg.toString());
-    // store msg to redis database
-    
-  });
+ const responses = await sessionClient.detectIntent(request);
+ 
+ client.on('message', function (_, msg) { 
+  console.log("Detected intent");
+  const result = responses[0].queryResult;
+  console.log(`  Query: ${result.queryText}`);
+  console.log(`  Response: ${result.fulfillmentText}`);
+  if (result.intent) {
+    console.log(`  Intent: ${result.intent.displayName}`);
+  } else {
+    console.log("  No intent matched.");
+  }
+ 
+  // store msg to redis database
+  
+});
  
 }
 runSample();
+
+client.on('connect', function () {
+  console.log('dialogflow已連接至MQTT伺服器');
+  client.subscribe("dialogflow");
+  //client.publish("web_info");
+  
+});
 
 
 
@@ -154,7 +154,6 @@ app.post('/', function(request, response){
     client.publish('web_info',"'"+strToObj+"'");
 });
 
-  
 
 
       

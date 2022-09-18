@@ -7,72 +7,16 @@ const io = new Server(server);
 var mqtt = require('mqtt');
 var opt = {port:1883,};
 const client  = mqtt.connect('mqtt://120.126.18.132',opt);
-const dialogflow = require("@google-cloud/dialogflow");
-const uuid = require("uuid");
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://120.126.18.132:27027/";
+
 
 var username 
 var useremail
 var str
 
 
-/**
- * Send a query to the dialogflow agent, and return the query result.
- * @param {string} projectId The project to be used
- */
-async function runSample(projectId = "test1-basn") {
-  // A unique identifier for the given session
-  const sessionId = uuid.v4();
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = "./test1-basn-c8b36638469a.json";
-  // Create a new session
-  const sessionClient = new dialogflow.SessionsClient({
-    keyFilename: 'test1-basn-c8b36638469a.json'
-  });
-  const sessionPath = sessionClient.projectAgentSessionPath(
-    projectId,
-    sessionId
-  );
-
-  // The text query request.
-  const request = {
-    session: sessionPath,
-    queryInput: {
-      text: {
-        // The query to send to the dialogflow agent
-        text: "你好",
-        // The language used by the client (en-US)
-        languageCode: "zh-TW"
-      }
-    }
-  };
-
-  // Send request and log result
- const responses = await sessionClient.detectIntent(request);
- 
- client.on('message', function (_, msg) { 
-  console.log("Detected intent");
-  const result = responses[0].queryResult;
-  console.log(`  Query: ${result.queryText}`);
-  console.log(`  Response: ${result.fulfillmentText}`);
-  if (result.intent) {
-    console.log(`  Intent: ${result.intent.displayName}`);
-  } else {
-    console.log("  No intent matched.");
-  }
- 
   // store msg to redis database
-  
-});
- 
-}
-runSample();
-
-client.on('connect', function () {
-  console.log('dialogflow已連接至MQTT伺服器');
-  client.subscribe("dialogflow");
-  //client.publish("web_info");
-  
-});
-
 
 
 
@@ -113,19 +57,41 @@ function getDatetime(){
 
 client.on('connect', function () {
   console.log('已連接至MQTT伺服器');
-  client.subscribe("web_info");
+  client.subscribe("web_info","dialogflow");
   //client.publish("web_info");
   
 });
 
-
 client.on('message', function (_, msg) { 
-  console.log( getDatetime() +"mqtt"+ " >> "+ msg.toString());
+  console.log( getDatetime() +"  mqtt"+ " >> "+ msg.toString());
   // store msg to redis database
-  io.sockets.emit('mqtt', msg.toString()); // to all socket clients 
+  io.sockets.emit('mqtt', msg.toString()); // to all socket clients       要得
   console.log(msg.toString);
 });
-
+client.on('message', (_, msg) => {
+  MongoClient.connect(url, function (err, db) {
+    if (err) throw err;
+  
+    var dbo = db.db("test");
+    var dbTTS=db.db("dialogflow");
+    var myobj ={ recv_time: getDatetime(), value: (msg.toString()) };
+  
+    dbo.collection("test_nodejs").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      console.log("1 document inserted");
+      db.close();
+      dbTTS.collection("dialogflow").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      console.log("1 document inserted");
+      db.close();
+    
+      });
+    }); 
+    console.log( getDatetime() + " >> "+ msg.toString());
+    // store msg to redis database
+    io.sockets.emit('wifi', msg.toString()); // to all socket clients
+  })
+});
 io.on('user',function(data){
   console.log('user:'+data.text);
 });
@@ -154,6 +120,7 @@ app.post('/', function(request, response){
     client.publish('web_info',"'"+strToObj+"'");
 });
 
+  
 
 
       

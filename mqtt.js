@@ -9,6 +9,8 @@ var opt = {port:1883,};
 const client  = mqtt.connect('mqtt://120.126.18.132',opt);
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://120.126.18.132:27027/";
+const dialogflow = require("@google-cloud/dialogflow");
+const uuid = require("uuid");
 
 
 var username 

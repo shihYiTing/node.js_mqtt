@@ -15,7 +15,60 @@ var username
 var useremail
 var str
 
+/**
+ * Send a query to the dialogflow agent, and return the query result.
+ * @param {string} projectId The project to be used
+ */
+ async function runSample(projectId = "test2-aaly") {
+  // A unique identifier for the given session
+  const sessionId = uuid.v4();
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = "./test2-aaly-6dc1de910ef4.json";
+  // Create a new session
+  const sessionClient = new dialogflow.SessionsClient({
+    keyFilename: 'test2-aaly-6dc1de910ef4.json'
+  });
+  const sessionPath = sessionClient.projectAgentSessionPath(
+    projectId,
+    sessionId
+  );
 
+  // The text query request.
+  const request = {
+    session: sessionPath,
+    queryInput: {
+      text: {
+        // The query to send to the dialogflow agent
+        text: "你好",
+        // The language used by the client (en-US)
+        languageCode: "zh-TW"
+      }
+    }
+  };
+
+  // Send request and log result
+  client.on('connect', function () {
+    client.publish('dialogflow',request.toString )
+    
+  })
+ const responses = await sessionClient.detectIntent(request);
+ client.on('message', function (_, msg) { 
+    console.log("Detected intent");
+    const result = responses[0].queryResult;
+    console.log(`  Query: ${result.queryText}`);
+    console.log(`  Response: ${result.fulfillmentText}`);
+    if (result.intent) {
+      console.log(`  Intent: ${result.intent.displayName}`);
+    } else {
+      console.log("  No intent matched.");
+    }
+    // const dialogflowresult= (`  Response: ${result.fulfillmentText}`);
+     
+});
+ 
+  // store msg to redis database
+
+}
+runSample();
   // store msg to redis database
 
 
@@ -156,3 +209,4 @@ app.post('/', function(request, response){
 server.listen(3000, () => {
   console.log('listening on *:3000');
 });
+
